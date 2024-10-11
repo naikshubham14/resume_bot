@@ -5,13 +5,14 @@ import nltk
 from nltk.tokenize.toktok import ToktokTokenizer
 from nltk.corpus import stopwords
 from io import BytesIO
-import RAG_util 
 from together import Together
 import os
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv, find_dotenv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+nltk.download('stopwords')
+nltk.download('wordnet')
 
 def basic_clean(string):
     '''
