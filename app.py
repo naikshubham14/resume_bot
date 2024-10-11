@@ -98,19 +98,19 @@ def main():
                 st.subheader("Required skills wordcloud as per the job description")
                 generate_wordcloud_image(job_description)
         with col6:
-        
-            cover_letter = helper.llm_call(cover_letter_generator_prompt)
-            st.divider()
-            with open("output.txt", "w") as file:
-            # Write the string to the file
-                file.write(cover_letter)
-                st.download_button(
-                    label="Download your custom cover letter",
-                    data=cover_letter,
-                    file_name="cover_letter.txt",
-                    mime="text/txt",
-                    icon=":material/download:"
-                )
+            with st.spinner("Generating Cover Letter"):
+                cover_letter = helper.llm_call(cover_letter_generator_prompt)
+                st.divider()
+                with open("output.txt", "w") as file:
+                # Write the string to the file
+                    file.write(cover_letter)
+                    st.download_button(
+                        label="Download your custom cover letter",
+                        data=cover_letter,
+                        file_name="cover_letter.txt",
+                        mime="text/txt",
+                        icon=":material/download:"
+                    )
     
 
 if __name__ == "__main__":
