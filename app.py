@@ -39,13 +39,25 @@ def generate_cover_letter(cover_letter_generator_prompt):
     
 def main():
     st.set_page_config(
-        page_title="Resume and Cover Letter Generator",
+        page_title="RESUMAGIC",
         layout="wide"
+        page_icon=":material/description:"
     )
 
     st.title("RESUMAGIC BOT 📄🤖")
-
-    st.divider()
+    st.subheader("Your one stop solution for everything you need before you hit that APPLY button")
+    St.text("Here are a few tips to get the most out of resumagic)
+    st.text("☝️. Make sure to provide comprehensive job description which includes role details, required skills.)
+    st.text("✌️. Make sure the include the details and the name of the company in the job description")
+    st.text(" ")
+    st.markdown(
+    """ If you like the project or have suggestions please feel free to reach out to me here ➡️
+    <a href="https://www.linkedin.com/in/shubham-rajan-naik/" target="_blank">
+        LinkedIn
+    </a>
+    """,
+    unsafe_allow_html=True
+)
 
     col1, col2 = st.columns(2)
 
