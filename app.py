@@ -46,7 +46,7 @@ def main():
 
     st.title("RESUMAGIC BOT 📄🤖")
     st.subheader("Your one stop solution for everything you need before you hit that APPLY button")
-    St.text("Here are a few tips to get the most out of resumagic)
+    st.text("Here are a few tips to get the most out of resumagic)
     st.text("☝️. Make sure to provide comprehensive job description which includes role details, required skills.)
     st.text("✌️. Make sure the include the details and the name of the company in the job description")
     st.text(" ")
