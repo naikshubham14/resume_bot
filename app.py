@@ -40,7 +40,7 @@ def generate_cover_letter(cover_letter_generator_prompt):
 def main():
     st.set_page_config(
         page_title="RESUMAGIC",
-        layout="wide"
+        layout="wide",
         page_icon=":material/description:"
     )
 
