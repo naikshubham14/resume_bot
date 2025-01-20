@@ -5,14 +5,12 @@ import nltk
 from nltk.tokenize.toktok import ToktokTokenizer
 from nltk.corpus import stopwords
 from io import BytesIO
-from together import Together
+import google.generativeai as genai
 import os
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv, find_dotenv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-nltk.download('stopwords')
-nltk.download('wordnet')
 
 def basic_clean(string):
     '''
@@ -153,11 +151,33 @@ def build_resume_jd_eval_prompt(resume, job_description):
     5. Provide a brief explanation for the conclusion, highlighting the reasons behind the match decision based on the analysis.
 
     ## Response Format
-    The response should be structured as follows:
-    1. Summary of the extracted skills, education background, and work experience from both the resume and job description.
-    2. Comparison analysis emphasizing work experience and skills alignment.
-    3. Match level determination (Excellent Match, Potential Match, Not a Match).
-    4. Brief explanation for the matching conclusion.
+    Adhere to the following JSON schema for your response:
+    
+    {{
+  "resume_extraction": {{
+    "skills": ["List of extracted skills from the resume"],
+    "education": "Extracted education background from the resume",
+    "work_experience": ["Extracted work experience details from the resume"]
+  }},
+  "job_description_extraction": {{
+    "skills": ["List of extracted skills from the job description"],
+    "education": "Extracted education background from the job description",
+    "work_experience": ["Extracted work experience details from the job description"]
+  }},
+  "comparison_analysis": {{
+    "skills_alignment": {{
+      "matching_skills": ["Skills found in both resume and job description"],
+      "missing_skills": ["Skills in job description but not in resume"]
+    }},
+    "education_alignment": "Comparison of education qualifications between resume and job description",
+    "work_experience_alignment": {{
+      "matching_experience": ["Specific experiences in resume matching job description"],
+      "gaps_in_experience": ["Experiences required in job description but missing in resume"]
+    }}
+  }},
+  "match_level": "Excellent Match | Potential Match | Not a Match",
+  "conclusion": "Brief explanation for the determined match level, highlighting key reasons and analysis outcomes."
+}}
 
     ## Instructions
     Please ensure to:
@@ -168,7 +188,7 @@ def build_resume_jd_eval_prompt(resume, job_description):
     return resume_jd_eval_prompt
 
 
-def build_cover_letter_generator_promt(resume, job_description, cover_letter=""):
+def build_cover_letter_generator_promt(resume, job_description):
     
     cover_letter_generator_promt = f'''Act as a world-class professional career advisor specializing in resume and cover letter writing. Given the following context, criteria, and instructions, create a tailored cover letter for a job application.
 
@@ -177,7 +197,6 @@ def build_cover_letter_generator_promt(resume, job_description, cover_letter="")
 
     \n Resume: {resume} \n 
     \n Job description: {job_description} \n
-    \n Cover Letter: {cover_letter} \n
 
     ## Approach
     Analyze the job description to identify key qualifications, required skills, and preferred experiences. Review the resume to extract relevant information that demonstrates how the applicant’s skills and experiences match the job requirements. Construct a concise and persuasive cover letter that emphasizes relevant experiences and uses appropriate keywords from the job description without overusing hype words or jargon.
@@ -189,23 +208,26 @@ def build_cover_letter_generator_promt(resume, job_description, cover_letter="")
     3. A body section that connects the applicant's experiences from the resume with the responsibilities and qualifications in the job description
     4. A closing paragraph that reiterates interest in the position and includes a call to action for further discussion
     5. A professional closing statement
-
+    6. In your final response do not add any indtroductory or trailing text, you response should include only the content of the cover letter
+    
     ## Instructions
     1. Use clear and professional language throughout the letter.
     2. Ensure the cover letter is focused on the job applied for and omits irrelevant information.
     3. Include specific examples from the resume that align with the job description.
     4. Maintain a formal tone and structure suitable for a job application.
     5. Extract contact information from the resume and include it in the cover letter
-    6. Dont enclude any indtroductory or trailing text in your response such as "Here is a tailored cover letter" '''
+    6. Dont include any indtroductory or trailing text in your response such as "Here is a tailored cover letter" '''
     
     return cover_letter_generator_promt
 
-def build_resume_evaluation_promt(resume):
+def build_resume_evaluation_promt(resume, profile, yoe):
     resume_evaluation_promt= f'''Act as a world-class resume expert specializing in resume best practices and resume optimization. Given the following context, criteria, and instructions, analyze the provided resume and offer constructive feedback to enhance its effectiveness and improve its score.
 
     ## Context
+    This resume belongs to a {profile} with {yoe} years of experience.
     The resume to be analyzed may include various sections such as contact information, objective/summary, work experience, education, skills, and additional sections like certifications or volunteer work. The analysis will focus on clarity, relevance, formatting, keyword optimization, and overall appeal to potential employers.
-
+    Keeping in mind the profile an their years of experience so that the analysis and evaluation is unique and personalized. The
+    
     \n Resume: {resume} \n 
 
     ## Approach
@@ -216,12 +238,49 @@ def build_resume_evaluation_promt(resume):
     5. Suggest formatting improvements for better readability and professionalism.
 
     ## Response Format
-    Provide a detailed analysis of the resume in a structured format:
-    1. Overall Impression: A brief summary of the resume's strengths and weaknesses.
-    2. Section-by-Section Breakdown: Feedback on each individual section, highlighting areas for improvement.
-    3. Keyword Optimization: Specific keywords to include based on industry standards.
-    4. Formatting Suggestions: Recommendations for layout adjustments to enhance visual appeal.
-    5. Conclusion: Final thoughts and a recap of the most critical improvement points.
+    Adhere to the following JSON schema for your response:
+    
+    {{
+    "ats_score": "Numeric score out of 100(e.g., 85, representing ATS compatibility)",
+    "overall_impression": {{
+        "strengths": ["List of key strengths observed in the resume, e.g., strong action verbs, quantified achievements"],
+        "weaknesses": ["List of key weaknesses, e.g., lack of keywords, unclear formatting"]
+    }},
+    "section_feedback": {{
+        "contact_information": {{
+        "feedback": "Specific observations on clarity and completeness, e.g., missing LinkedIn profile, email formatting issues",
+        "suggestions": ["Actionable suggestions for improvement"]
+        }},
+        "objective_summary": {{
+        "feedback": "Evaluation of relevance and alignment with the candidate's profile and experience",
+        "suggestions": ["Actionable suggestions for rewriting or improving"]
+        }},
+        "work_experience": {{
+        "feedback": "Analysis of how well achievements are quantified, use of action verbs, and relevance to the profile",
+        "suggestions": ["Specific suggestions to improve details or add missing information"]
+        }},
+        "education": {{
+        "feedback": "Observations on how well the education section aligns with the profile and industry standards",
+        "suggestions": ["Improvements for clarity or additional details if necessary"]
+        }},
+        "skills": {{
+        "feedback": "Analysis of the skillset's relevance to the candidate's field and comprehensiveness",
+        "suggestions": ["Missing or additional skills to highlight"]
+        }},
+        "additional_sections": {{
+        "feedback": "Evaluation of certifications, volunteer work, or other sections for relevance and impact",
+        "suggestions": ["Ideas for additional sections or improvements to existing ones"]
+        }}
+    }},
+    "keyword_optimization": {{
+        "missing_keywords": ["List of relevant industry-specific keywords to include"],
+        "recommendations": "Suggestions on where to integrate these keywords in the resume"
+    }},
+    "formatting_suggestions": [
+        "List of actionable formatting recommendations, e.g., font choice, spacing, consistent bullet points"
+    ],
+    "conclusion": "Summary of the most critical points for improvement and overall readiness of the resume for job applications"
+    }}
 
     ## Instructions
     - Maintain a professional tone throughout the analysis.
@@ -248,25 +307,29 @@ def llm_call(prompt):
     It also requires a valid API key to be set in the environment variable 'TOGETHER_API_KEY'.
     """
     _ = load_dotenv(find_dotenv())
-    client = Together(api_key=os.environ.get('TOGETHER_API_KEY'))
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-    responses = client.chat.completions.create(
-        model="meta-llama/Llama-Vision-Free",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        max_tokens=1512,
-        temperature=0.7,
-        top_p=0.7,
-        top_k=50,
-        repetition_penalty=1,
-        stop=["<|eot_id|>","<|eom_id|>"],
-        truncate=130560
+    # Create the model
+    generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+    }
+
+    model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
     )
-    return responses.choices[0].message.content
+
+    chat_session = model.start_chat(
+    history=[
+    ]
+    )
+
+    response = chat_session.send_message(prompt)
+    return response.text
 
 def read_pdf(pdf):
     """
