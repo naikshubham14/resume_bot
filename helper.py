@@ -177,17 +177,18 @@ def read_pdf(pdf):
     """
 
     text = ""
-    doc = fitz.open(pdf)
-    output = []
-    for page in doc:
-        output += page.get_text("blocks")
-    previous_block_id = 0 # Set a variable to mark the block id
-    for block in output:
-        if block[6] == 0: # We only take the text
-            if previous_block_id != block[5]: # Compare the block number
-                plain_text = unidecode(block[4])
-                text += plain_text
-                text += '\n'
+    # Open the PDF from the byte stream
+    with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
+        output = []
+        for page in doc:
+            output += page.get_text("blocks")  # Extract blocks of text
+        previous_block_id = 0  # Set a variable to mark the block id
+        for block in output:
+            if block[6] == 0:  # We only take the text blocks
+                if previous_block_id != block[5]:  # Compare the block number
+                    plain_text = unidecode(block[4])  # Clean the text
+                    text += plain_text
+                    text += '\n'
     return text
 
 def create_cover_letter_pdf(cover_letter_content):
