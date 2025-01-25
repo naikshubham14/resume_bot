@@ -2,11 +2,11 @@ import re
 import unicodedata
 from wordcloud import WordCloud
 import nltk
-from nltk.tokenize.toktok import ToktokTokenizer
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
 from io import BytesIO
 import google.generativeai as genai
 import os
+from PyPDF2 import PdfReader
 from dotenv import load_dotenv, find_dotenv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -177,16 +177,58 @@ def read_pdf(pdf):
     """
 
     text = ""
-    # Open the PDF from the byte stream
-    with fitz.open(stream=pdf.read(), filetype="pdf") as doc:
-        output = []
-        for page in doc:
-            output += page.get_text("blocks")  # Extract blocks of text
-        previous_block_id = 0  # Set a variable to mark the block id
-        for block in output:
-            if block[6] == 0:  # We only take the text blocks
-                if previous_block_id != block[5]:  # Compare the block number
-                    plain_text = unidecode(block[4])  # Clean the text
-                    text += plain_text
-                    text += '\n'
+    doc = fitz.open(pdf)
+    output = []
+    for page in doc:
+        output += page.get_text("blocks")
+    previous_block_id = 0 # Set a variable to mark the block id
+    for block in output:
+        if block[6] == 0: # We only take the text
+            if previous_block_id != block[5]: # Compare the block number
+                plain_text = unidecode(block[4])
+                text += plain_text
+                text += '\n'
     return text
+
+def create_cover_letter_pdf(cover_letter_content):
+    """
+    This function generates a PDF file containing the provided cover letter content.
+
+    Parameters:
+    cover_letter_content (str): The text content of the cover letter to be included in the PDF.
+
+    Returns:
+    None: The function generates a PDF file named "cover_letter.pdf" containing the cover letter content.
+
+    Note:
+    This function uses the reportlab library to create the PDF file. The PDF file is saved in the current working directory.
+    """
+    c = canvas.Canvas("cover_letter.pdf", pagesize=letter)
+    width, height = letter
+    c.setFont("Helvetica", 12)
+    c.drawString(100, height - 100, cover_letter_content)
+    c.save()
+
+def ensure_nltk_resources_download():
+    """
+    This function checks if required NLTK resources are available and downloads them if necessary.
+    """
+    # List of NLTK resources to check and download
+    resources = ['wordnet', 'stopwords', 'punkt', 'averaged_perceptron_tagger', 'omw']
+    
+    for resource in resources:
+        try:
+            # Try accessing a sample of the resource
+            if resource == 'stopwords':
+                stopwords.words('english')  # Check stopwords
+            elif resource == 'wordnet':
+                wordnet.synsets('example')  # Check wordnet
+            else:
+                # For other resources, we can just use nltk.data.find() to check
+                nltk.data.find(f"corpora/{resource}")
+        except LookupError:
+            # If the resource is not found, download it
+            print(f"{resource} data not found. Downloading...")
+            nltk.download(resource)
+        else:
+            print(f"{resource} data is already available.")

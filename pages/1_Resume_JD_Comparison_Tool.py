@@ -1,7 +1,6 @@
 
 import streamlit as st
 import helper
-from reportlab.lib.pagesizes import letter
 import json_repair
 import prompts
 
