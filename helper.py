@@ -7,10 +7,11 @@ from nltk.corpus import stopwords
 from io import BytesIO
 import google.generativeai as genai
 import os
-from PyPDF2 import PdfReader
 from dotenv import load_dotenv, find_dotenv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from unidecode import unidecode
+import fitz
 
 def basic_clean(string):
     '''
@@ -123,173 +124,6 @@ def read_file(file):
     elif file_extension == 'txt':
         return file.read().decode("utf-8")
     
-def build_resume_jd_eval_prompt(resume, job_description):
-    """
-    This function generates a prompt for a career guidance expert to evaluate a resume in relation to a job description.
-    The prompt includes a system message, context, action approach, resume and job description, and instructions.
-
-    Parameters:
-    resume (str): The content of the resume as a string. Default value is an empty string.
-    job_description (str): The content of the job description as a string. Default value is an empty string.
-
-    Returns:
-    str: The generated prompt as a string.
-    """
-    
-    resume_jd_eval_prompt = f'''Act as a world-class career guidance expert specializing in resume evaluation. Given the following context, criteria, and instructions, perform a detailed analysis of a resume in relation to a job description.
-    ## Context
-    A resume and a job description will be provided, containing detailed information regarding the candidate's skills, educational background, and work experience, as well as the requirements and qualifications sought for the job position.
-    
-    \n Resume: {resume} \n 
-    \n Job description: {job_description} \n
-    
-    ## Approach
-    1. Extract the skills, education background, and work experience sections from the provided resume.
-    2. Extract the skills, education background, and work experience sections from the provided job description.
-    3. Analyze and compare the extracted results from both the resume and job description, with a focus on work experience and skills. Assess the compatibility of the candidate’s qualifications with the job requirements.
-    4. Determine the match level based on the comparison results, categorizing the match as "Excellent Match", "Potential Match", or "Not a Match".
-    5. Provide a brief explanation for the conclusion, highlighting the reasons behind the match decision based on the analysis.
-
-    ## Response Format
-    Adhere to the following JSON schema for your response:
-    
-    {{
-  "resume_extraction": {{
-    "skills": ["List of extracted skills from the resume"],
-    "education": "Extracted education background from the resume",
-    "work_experience": ["Extracted work experience details from the resume"]
-  }},
-  "job_description_extraction": {{
-    "skills": ["List of extracted skills from the job description"],
-    "education": "Extracted education background from the job description",
-    "work_experience": ["Extracted work experience details from the job description"]
-  }},
-  "comparison_analysis": {{
-    "skills_alignment": {{
-      "matching_skills": ["Skills found in both resume and job description"],
-      "missing_skills": ["Skills in job description but not in resume"]
-    }},
-    "education_alignment": "Comparison of education qualifications between resume and job description",
-    "work_experience_alignment": {{
-      "matching_experience": ["Specific experiences in resume matching job description"],
-      "gaps_in_experience": ["Experiences required in job description but missing in resume"]
-    }}
-  }},
-  "match_level": "Excellent Match | Potential Match | Not a Match",
-  "conclusion": "Brief explanation for the determined match level, highlighting key reasons and analysis outcomes."
-}}
-
-    ## Instructions
-    Please ensure to:
-    - Maintain objectivity and clarity in the analysis.
-    - Highlight specific examples or sections from both the resume and job description during the comparison.
-    - Conclude with a rational explanation that supports the match determination, ensuring it is succinct yet informative.'''
-    
-    return resume_jd_eval_prompt
-
-
-def build_cover_letter_generator_promt(resume, job_description):
-    
-    cover_letter_generator_promt = f'''Act as a world-class professional career advisor specializing in resume and cover letter writing. Given the following context, criteria, and instructions, create a tailored cover letter for a job application.
-
-    ## Context
-    A job description will be provided detailing specific skills, qualifications, and experiences desired by the employer. Additionally, a current resume will be shared, which includes relevant work experiences, skills, and accomplishments that align with the job description.
-
-    \n Resume: {resume} \n 
-    \n Job description: {job_description} \n
-
-    ## Approach
-    Analyze the job description to identify key qualifications, required skills, and preferred experiences. Review the resume to extract relevant information that demonstrates how the applicant’s skills and experiences match the job requirements. Construct a concise and persuasive cover letter that emphasizes relevant experiences and uses appropriate keywords from the job description without overusing hype words or jargon.
-
-    ## Response Format
-    The cover letter should include the following sections: 
-    1. A professional greeting
-    2. An introduction that states the position being applied for and a brief overview of the applicant's interest in the role
-    3. A body section that connects the applicant's experiences from the resume with the responsibilities and qualifications in the job description
-    4. A closing paragraph that reiterates interest in the position and includes a call to action for further discussion
-    5. A professional closing statement
-    6. In your final response do not add any indtroductory or trailing text, you response should include only the content of the cover letter
-    
-    ## Instructions
-    1. Use clear and professional language throughout the letter.
-    2. Ensure the cover letter is focused on the job applied for and omits irrelevant information.
-    3. Include specific examples from the resume that align with the job description.
-    4. Maintain a formal tone and structure suitable for a job application.
-    5. Extract contact information from the resume and include it in the cover letter
-    6. Dont include any indtroductory or trailing text in your response such as "Here is a tailored cover letter" '''
-    
-    return cover_letter_generator_promt
-
-def build_resume_evaluation_promt(resume, profile, yoe):
-    resume_evaluation_promt= f'''Act as a world-class resume expert specializing in resume best practices and resume optimization. Given the following context, criteria, and instructions, analyze the provided resume and offer constructive feedback to enhance its effectiveness and improve its score.
-
-    ## Context
-    This resume belongs to a {profile} with {yoe} years of experience.
-    The resume to be analyzed may include various sections such as contact information, objective/summary, work experience, education, skills, and additional sections like certifications or volunteer work. The analysis will focus on clarity, relevance, formatting, keyword optimization, and overall appeal to potential employers.
-    Keeping in mind the profile an their years of experience so that the analysis and evaluation is unique and personalized. The
-    
-    \n Resume: {resume} \n 
-
-    ## Approach
-    1. Thoroughly review each section of the resume for completeness and clarity.
-    2. Identify any areas lacking relevant details or that do not align with industry standards.
-    3. Evaluate the use of action verbs and quantify achievements where possible.
-    4. Check for keyword optimization in relation to job descriptions relevant to the applicant's field.
-    5. Suggest formatting improvements for better readability and professionalism.
-
-    ## Response Format
-    Adhere to the following JSON schema for your response:
-    
-    {{
-    "ats_score": "Numeric score out of 100(e.g., 85, representing ATS compatibility)",
-    "overall_impression": {{
-        "strengths": ["List of key strengths observed in the resume, e.g., strong action verbs, quantified achievements"],
-        "weaknesses": ["List of key weaknesses, e.g., lack of keywords, unclear formatting"]
-    }},
-    "section_feedback": {{
-        "contact_information": {{
-        "feedback": "Specific observations on clarity and completeness, e.g., missing LinkedIn profile, email formatting issues",
-        "suggestions": ["Actionable suggestions for improvement"]
-        }},
-        "objective_summary": {{
-        "feedback": "Evaluation of relevance and alignment with the candidate's profile and experience",
-        "suggestions": ["Actionable suggestions for rewriting or improving"]
-        }},
-        "work_experience": {{
-        "feedback": "Analysis of how well achievements are quantified, use of action verbs, and relevance to the profile",
-        "suggestions": ["Specific suggestions to improve details or add missing information"]
-        }},
-        "education": {{
-        "feedback": "Observations on how well the education section aligns with the profile and industry standards",
-        "suggestions": ["Improvements for clarity or additional details if necessary"]
-        }},
-        "skills": {{
-        "feedback": "Analysis of the skillset's relevance to the candidate's field and comprehensiveness",
-        "suggestions": ["Missing or additional skills to highlight"]
-        }},
-        "additional_sections": {{
-        "feedback": "Evaluation of certifications, volunteer work, or other sections for relevance and impact",
-        "suggestions": ["Ideas for additional sections or improvements to existing ones"]
-        }}
-    }},
-    "keyword_optimization": {{
-        "missing_keywords": ["List of relevant industry-specific keywords to include"],
-        "recommendations": "Suggestions on where to integrate these keywords in the resume"
-    }},
-    "formatting_suggestions": [
-        "List of actionable formatting recommendations, e.g., font choice, spacing, consistent bullet points"
-    ],
-    "conclusion": "Summary of the most critical points for improvement and overall readiness of the resume for job applications"
-    }}
-
-    ## Instructions
-    - Maintain a professional tone throughout the analysis.
-    - Ensure that all feedback is actionable and specific.
-    - Focus on evidence-based best practices in resume crafting.
-    - Highlight examples or alternatives where applicable, providing options for improvement.'''
-    
-    return resume_evaluation_promt
-
 
 def llm_call(prompt):
     """
@@ -341,27 +175,17 @@ def read_pdf(pdf):
     Returns:
     str: The extracted text from the PDF file.
     """
+
     text = ""
-    reader = PdfReader(pdf)
-    for page in reader.pages:
-        text += page.extract_text()
+    doc = fitz.open(pdf)
+    output = []
+    for page in doc:
+        output += page.get_text("blocks")
+    previous_block_id = 0 # Set a variable to mark the block id
+    for block in output:
+        if block[6] == 0: # We only take the text
+            if previous_block_id != block[5]: # Compare the block number
+                plain_text = unidecode(block[4])
+                text += plain_text
+                text += '\n'
     return text
-
-def create_cover_letter_pdf(cover_letter_content):
-    """
-    This function generates a PDF file containing the provided cover letter content.
-
-    Parameters:
-    cover_letter_content (str): The text content of the cover letter to be included in the PDF.
-
-    Returns:
-    None: The function generates a PDF file named "cover_letter.pdf" containing the cover letter content.
-
-    Note:
-    This function uses the reportlab library to create the PDF file. The PDF file is saved in the current working directory.
-    """
-    c = canvas.Canvas("cover_letter.pdf", pagesize=letter)
-    width, height = letter
-    c.setFont("Helvetica", 12)
-    c.drawString(100, height - 100, cover_letter_content)
-    c.save()

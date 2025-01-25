@@ -8,34 +8,6 @@ import io
 @st.cache_data
 def generate_wordcloud_image(job_description):
     st.image(helper.generate_wordcloud(job_description), use_column_width=True)
-
-@st.cache_data
-def generate_cover_letter(cover_letter_generator_prompt):
-    buffer = io.BytesIO()
-    content = helper.llm_call(cover_letter_generator_prompt)
-    c = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
-    # Set the font and size
-    c.setFont("Helvetica", 12)
-    # Define the starting position
-    x = 70
-    y = height - 100
-    max_width = width - 70
-    wrapped_content = textwrap.wrap(content, max_width)
-    # Write each line to the PDF
-    for line in wrapped_content:
-        c.drawString(x, y, line)
-        y -= 15  # Move to the next line
-        # Check if we need to create a new page
-        if y < 40:
-            c.showPage()
-            c.setFont("Helvetica", 12)
-            y = height - 100
-    # Save the PDF file
-    c.save()
-    buffer.seek(0)
-    return buffer    
-
     
 def main():
     st.set_page_config(
@@ -46,7 +18,7 @@ def main():
 
     st.markdown(
     """
-    <h1 style="text-align: center; color: #4CAF50;">RESUMAGIC BOT 📄🤖</h1>
+    <h1 style="text-align: center; color: #4CAF50;">RESUMAGIC 2.0 📄🤖</h1>
     <h3 style="text-align: center; color: #FFC107;">Your one-stop solution for everything you need before you hit that APPLY button</h3>
     <p style="text-align: center; color: #9E9E9E; font-size: 16px;">
         Here are all the tools available at your disposal:

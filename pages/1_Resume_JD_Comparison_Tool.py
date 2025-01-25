@@ -2,7 +2,8 @@
 import streamlit as st
 import helper
 from reportlab.lib.pagesizes import letter
-import json
+import json_repair
+import prompts
 
 
 st.set_page_config(
@@ -29,15 +30,14 @@ st.markdown(
 unsafe_allow_html=True
 )
 
-
+col1, col2 = st.columns(2)
 # Add a file uploader
-st.subheader("Upload your Resume")
-resume = st.file_uploader("Upload Resume",accept_multiple_files=False,type=("pdf", "txt"), key="resume", label_visibility="hidden")
-st.divider()
-
-
-st.subheader("Paste the Job Description")
-job_description=st.text_area("Job Description", height=325, placeholder="Paste Job Description", key="job_description", label_visibility="hidden")
+with col1:
+    st.subheader("Upload your Resume")
+    resume = st.file_uploader("Upload Resume",accept_multiple_files=False,type=("pdf", "txt"), key="resume", label_visibility="hidden")
+with col2:
+    st.subheader("Paste the Job Description")
+    job_description=st.text_area("Job Description", height=325, placeholder="Paste Job Description", key="job_description", label_visibility="hidden")
 
 if(resume is None or len(job_description) == 0):
     if(resume is None and len(job_description) == 0):
@@ -47,13 +47,13 @@ if(resume is None or len(job_description) == 0):
     if (resume is not None and len(job_description) == 0):
         st.error("Please upload Job Description to proceed")
 
-if(st.button("Generate", type="primary", disabled=resume is None or len(job_description) == 0, use_container_width=True, icon=":material/send:")):
+if(st.button("Compare", type="primary", disabled=resume is None or len(job_description) == 0, use_container_width=True, icon=":material/compare_arrows:")):
         st.divider()
         resume_content = helper.read_file(resume)
-        resume_jd_eval_prompt = helper.build_resume_jd_eval_prompt(resume_content, job_description)
+        resume_jd_eval_prompt = prompts.build_resume_jd_eval_prompt(resume_content, job_description)
         with st.spinner("Mathcing the job description"):
-            response = helper.llm_call(resume_jd_eval_prompt).strip().replace("```json", "").replace("```", "")
-            response = json.loads(response)
+            response = helper.llm_call(resume_jd_eval_prompt).strip().replace("```json", "").replace("```", "").replace("\n", "")
+            response = json_repair.loads(response)
             # Define match level colors
             match_level_colors = {
                 "Excellent Match": "#4CAF50",  # Green
@@ -106,32 +106,32 @@ if(st.button("Generate", type="primary", disabled=resume is None or len(job_desc
             # Resume and JD Extraction Table
             st.markdown("<h2 style='text-align: center;'>Resume and JD Extraction</h2>", unsafe_allow_html=True)
 
-            col1, col2 = st.columns(2)
+            col3, col4 = st.columns(2)
             # Resume extraction
-            with col1:
+            with col3:
                 st.subheader("Resume Extraction")
                 st.markdown("### Skills")
                 st.markdown('<div class="pill-container">' + ''.join([f'<div class="pill">{skill}</div>' for skill in response["resume_extraction"]["skills"]]) + '</div>', unsafe_allow_html=True)
-            with col2:
+            with col4:
                 st.subheader("Job Description Extraction")
                 st.markdown("### Skills")
                 st.markdown('<div class="pill-container">' + ''.join([f'<div class="pill pill-jd">{skill}</div>' for skill in response["job_description_extraction"]["skills"]]) + '</div>', unsafe_allow_html=True)
             st.divider()
 
-            col3, col4 = st.columns(2)  
-            with col3:
+            col5, col6 = st.columns(2)  
+            with col5:
                 st.markdown("### Education")
                 st.write(response["resume_extraction"]["education"])
-            with col4:
+            with col6:
                 st.markdown("### Education")
                 st.write(response["job_description_extraction"]["education"])
             st.divider()
             
-            col5, col6 = st.columns(2)
-            with col5:
+            col7, col8 = st.columns(2)
+            with col7:
                 st.markdown("### Work Experience")
                 st.write("\n".join(response["resume_extraction"]["work_experience"]))
-            with col6:
+            with col8:
                 st.markdown("### Work Experience")
                 st.write("\n".join(response["job_description_extraction"]["work_experience"]))
             st.divider()
@@ -139,29 +139,30 @@ if(st.button("Generate", type="primary", disabled=resume is None or len(job_desc
             # Comparison Analysis
             st.markdown("<h2 style='text-align: center;'>Comparison Analysis</h2>", unsafe_allow_html=True)
             
-            col7, col8 = st.columns(2)
+            col9, col10 = st.columns(2)
             # Skills alignment
-            with col7:
+            with col9:
                 st.markdown("#### Skills Alignment")
-                st.write(f"**Matching Skills:** {', '.join(response['comparison_analysis']['skills_alignment']['matching_skills'])}")
-                st.write(f"**Missing Skills:** {', '.join(response['comparison_analysis']['skills_alignment']['missing_skills'])}")
-
-            
+                matching_skills = ', '.join(response['comparison_analysis']['skills_alignment']['matching_skills'])
+                missing_skills = ', '.join(response['comparison_analysis']['skills_alignment']['missing_skills'])
+                # Using HTML to style the text
+                st.markdown(f"<span style='color: green;'> **Matching Skills:** </span> {matching_skills}", unsafe_allow_html=True)
+                st.markdown(f"<span style='color: red;'> **Missing Skills:** </span> {missing_skills}", unsafe_allow_html=True)            
             # Education alignment
-            with col8:
+            with col10:
                 st.markdown("#### Education Alignment")
                 st.write(response["comparison_analysis"]["education_alignment"])
             st.divider()
             
-            col9, col10 = st.columns(2)
+            col11, col12 = st.columns(2)
             # Work experience alignment
-            with col9:
+            with col11:
                 st.markdown("#### Work Experience Alignment")
-                st.write(f"**Matching Experience:** {', '.join(response['comparison_analysis']['work_experience_alignment']['matching_experience'])}")
-                st.write(f"**Gaps in Experience:** {', '.join(response['comparison_analysis']['work_experience_alignment']['gaps_in_experience'])}")
+                st.markdown(f"<span style='color: green;'>**Matching Experience:**</span> {', '.join(response['comparison_analysis']['work_experience_alignment']['matching_experience'])}", unsafe_allow_html=True)
+                st.markdown(f"<span style='color: red;'>**Gaps in Experience:**</span> {', '.join(response['comparison_analysis']['work_experience_alignment']['gaps_in_experience'])}", unsafe_allow_html=True)
             
             # Conclusion (less prominent)
-            with col10:
+            with col12:
                 st.markdown("<h3>Conclusion</h3>", unsafe_allow_html=True)
                 st.write(response["conclusion"])
             st.divider()
