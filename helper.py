@@ -178,7 +178,7 @@ def read_pdf(pdf):
 
     text = ""
     # Open the PDF from the byte stream
-    with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
+    with fitz.open(stream=pdf.read(), filetype="pdf") as doc:
         output = []
         for page in doc:
             output += page.get_text("blocks")  # Extract blocks of text
