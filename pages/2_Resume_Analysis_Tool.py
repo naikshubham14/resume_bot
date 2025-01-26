@@ -67,7 +67,7 @@ if(st.button("Analyze", type="primary", disabled=resume is None, use_container_w
                 metrics_evaluation.append([metric_name, score, comment])
                 metric_sum += score
                 
-            ats_score = max(ats_score, metric_sum)
+            ats_score = metric_sum
             
             st.markdown(f"""<h2 style='text-align: center;'>
                         Score
