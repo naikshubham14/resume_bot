@@ -3,7 +3,7 @@ import helper, prompts
 import base64
 
 st.set_page_config(
-    page_title="RESUMAGIC - Cover Letter Generator",
+    page_title="Cover Letter Generator",
     layout="wide",
     page_icon=":material/description:"
 )
@@ -12,19 +12,40 @@ st.set_page_config(
 def generate_wordcloud_image(job_description):
     st.image(helper.generate_wordcloud(job_description), use_column_width=True)
 
-st.title("COVER LETTER GENERATOR 📄")
-st.subheader("Get a tailored cover letter that highlights your strengths based on the job you’re applying for")
-st.text("Here are a few tips to get the most out of the tool")
-st.text("☝️. Make sure to provide comprehensive job description which includes role details, required skills.")
-st.text("✌️. Make sure the include the details and the name of the company in the job description")
-st.text(" ")
+st.markdown("""
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+            <style>
+            .header-banner {
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            color: #fff;
+            padding: 2rem 0;
+            text-align: center;
+            border-radius: 30px 30px 30px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            }
+            .header-banner h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            }
+            .header-banner p {
+            font-size: 1.25rem;
+            }
+            </style>""", unsafe_allow_html=True)
+
+# Header Banner Section
 st.markdown(
-""" If you like the project or have suggestions please feel free to reach out to me here ➡️
-<a href="https://www.linkedin.com/in/shubham-rajan-naik/" target="_blank">
-    LinkedIn
-</a>
-""",
-unsafe_allow_html=True
+    """
+    <div class="header-banner">
+        <h1>Cover Letter Generator 📄</h1>
+        <p>Get a tailored cover letter that highlights your strengths based on the job you're applying for.</p>
+        <p>
+            <small>
+            For suggestions or feedback, let's connect on <a href="https://www.linkedin.com/in/shubham-rajan-naik/" target="_blank" style="color:#fff; text-decoration:underline;">LinkedIn</a>
+            </small>
+        </p>
+    </div>
+    """, unsafe_allow_html=True
 )
 
 col1, col2 = st.columns(2)

@@ -145,7 +145,7 @@ def llm_call(prompt):
 
     # Create the model
     generation_config = {
-    "temperature": 1,
+    "temperature": 0.2,
     "top_p": 0.95,
     "top_k": 40,
     "max_output_tokens": 8192,
@@ -233,3 +233,18 @@ def ensure_nltk_resources_download():
             nltk.download(resource)
         else:
             print(f"{resource} data is already available.")
+
+
+def split_sentences(nlp, text):
+    """
+    This function splits a given text into sentences using the provided NLP model.
+
+    Parameters:
+    nlp (spacy.lang.en.English): The Spacy NLP model to be used for sentence splitting.
+    text (str): The text to be split into sentences.
+
+    Returns:
+    List[str]: A list of sentences extracted from the text.
+    """
+    doc = nlp(text)  # Process the text using the NLP model
+    return [sent.text for sent in doc.sents]  # Extract the text of each sentence

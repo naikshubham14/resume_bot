@@ -1,8 +1,5 @@
 import streamlit as st
 import helper
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-import textwrap
 import io
 
 @st.cache_data
@@ -16,31 +13,58 @@ def main():
         page_icon=":material/description:"
     )
 
+    # Add Bootstrap CSS
+    st.markdown("""
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            .card { 
+                transition: transform 0.2s; 
+                min-height: 300px;
+                background-color: #f8f9fa;
+            }
+            .card:hover { transform: translateY(-5px); }
+            .card-text { color: #212529; }
+            .card-title { color: #000; font-weight: bold; }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.markdown(
     """
-    <h1 style="text-align: center; color: #4CAF50;">RESUMAGIC 2.0 📄🤖</h1>
-    <h3 style="text-align: center; color: #FFC107;">Your one-stop solution for everything you need before you hit that APPLY button</h3>
-    <p style="text-align: center; color: #9E9E9E; font-size: 16px;">
-        Here are all the tools available at your disposal:
-    </p>
-
-    <ul style="font-size: 16px; line-height: 1.8; list-style-type: none; padding-left: 0;">
-        <li style="margin-bottom: 10px;">
-            <b style="color: #FF5722;">☝️ Resume - JD Comparison Tool 🧠:</b> 
-            Break down how well your resume aligns with the job you're targeting, scoring your compatibility.
-        </li>
-        <li style="margin-bottom: 10px;">
-            <b style="color: #2196F3;">✌️ Resume Analysis Tool ✍️:</b> 
-            Not just a score—real insights on how to make your resume stand out.
-        </li>
-        <li style="margin-bottom: 10px;">
-            <b style="color: #8E24AA;">👌 Cover Letter Generation Tool 📄:</b> 
-            Get a tailored cover letter that highlights your strengths based on the job you're applying for.
-        </li>
-    </ul>
+    <div class="container">
+        <h1 class="text-center text-success mb-4">RESUMAGIC 2.0 📄🤖</h1>
+        <h3 class="text-center text-warning mb-4">Your one-stop solution for everything you need before you hit that APPLY button</h3>
+        <p class="text-center text-muted mb-5">Here are all the tools available at your disposal:</p>
+    </div>
     """,
     unsafe_allow_html=True
 )
+    st.markdown(
+        """<div class="row justify-content-center">
+            <div class="col-md-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h5 class="card-title text-center">☝️ Resume - JD Comparison Tool 🧠</h5>
+                        <p class="card-text text-center">Break down how well your resume aligns with the job you're targeting, scoring your compatibility.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h5 class="card-title text-center">✌️ Resume Analysis Tool ✍️</h5>
+                        <p class="card-text text-center">Not just a score—real insights on how to make your resume stand out.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h5 class="card-title text-center">👌 Cover Letter Generation Tool 📄</h5>
+                        <p class="card-text text-center">Get a tailored cover letter that highlights your strengths based on the job you're applying for.</p>
+                    </div>
+                </div>
+            </div>
+        </div>""", unsafe_allow_html=True    )
     
     st.text(" ")
     st.markdown(
@@ -62,5 +86,5 @@ def main():
     
 
 if __name__ == "__main__":
-    helper.ensure_nltk_resources_download()
+    #helper.ensure_nltk_resources_download()
     main()
