@@ -86,5 +86,5 @@ def main():
     
 
 if __name__ == "__main__":
-    #helper.ensure_nltk_resources_download()
+    helper.ensure_nltk_resources_download()
     main()
